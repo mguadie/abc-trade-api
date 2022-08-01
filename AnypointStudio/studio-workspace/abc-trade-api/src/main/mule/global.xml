@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd  http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <configuration-properties doc:name="Configuration properties" doc:id="075033eb-02b4-42fb-b7be-0e14f889ccd1" file="config/${env}.properties" />
+    <secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="6fa874ad-5e1c-42dc-a64f-3f37920ce0b0" file="config/${env}.secured.properties" key="${secureKey}" />
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="530ffb37-e17a-4b0e-8fc8-7aa7ba86f580">
+        <db:my-sql-connection host="${db.host}" port="${db.port}" user="${db.user}" password="${secure::db.password}" database="${db.schemaName}" />
+    </db:config>
+    <http:listener-config name="abc-trade-api-httpListenerConfig">
+        <http:listener-connection host="${http.host}" port="${http.port}" />
+    </http:listener-config>
+    <apikit:config name="abc-trade-api-config" api="resource::21738aaa-bd49-43fb-96c1-0aa3f2d029eb:abc-trade-api:1.0.4:raml:zip:abc-trade-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <configuration doc:name="Configuration" doc:id="881af434-61b1-40f7-ad28-e159805d0473" defaultErrorHandler-ref="globalError_Handler" />
+    <error-handler name="globalError_Handler" doc:id="cb59ec34-97fc-486f-be2d-e7176081985d">
+        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="001e8192-732c-47c6-a162-48bf9520861c" type="ANY">
+            <ee:transform doc:name="Transform Message" doc:id="bb6f481b-70c7-42a7-be7c-802edb1f055b">
+                <ee:message />
+                <ee:variables>
+                    <ee:set-variable variableName="errorType"><![CDATA[%dw 2.0
+output application/json
+---
+"Database Error"]]></ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+            <flow-ref doc:name="process-error-subflow" doc:id="133d0207-edd6-45d5-9b70-5433fce36fa9" name="process-error-subflow" />
+        </on-error-propagate>
+        <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="0cbbb38d-e987-4b62-82eb-4809203def06">
+            <ee:transform doc:name="Transform Message" doc:id="e2ed3fd1-60e6-4d62-a522-4feda9400823">
+                <ee:message />
+                <ee:variables>
+                    <ee:set-variable variableName="errorType"><![CDATA[%dw 2.0
+output application/json
+---
+"Generic"]]></ee:set-variable>
+                </ee:variables>
+            </ee:transform>
+            <flow-ref doc:name="process-error-subflow" doc:id="bff83d2f-4f1f-45f5-804b-35b6d1ac6178" name="process-error-subflow" />
+        </on-error-propagate>
+    </error-handler>
+    <sub-flow name="process-error-subflow" doc:id="a172801b-0bef-4eac-806c-7e544cce7ee8">
+        <ee:transform doc:name="Transform Message" doc:id="d5d28c9d-417a-4889-9a50-dce9d059a7b2">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+ {
+          "status":"Fail",
+          "error":{"code": vars.errorType,
+                	
+                	"message":error.description
+              }}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </sub-flow>
+</mule>

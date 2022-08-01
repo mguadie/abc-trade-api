@@ -1,0 +1,12 @@
+%dw 2.0
+
+type auto_9a5cffef_4530_4d1a_860d_d1e019145c62_Output_Payload = {|
+  symbol?: String, 
+  quantity?: String, 
+  createdDate?: String, 
+  price?: String, 
+  exchange?: String, 
+  operation?: String, 
+  status?: String
+|}
+

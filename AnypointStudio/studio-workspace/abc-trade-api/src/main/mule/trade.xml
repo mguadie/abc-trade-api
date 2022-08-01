@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	
+	<sub-flow name="trade-orchestration-subflow" doc:id="658ef907-2fba-4aec-b448-3932d46380b8" >
+		<set-variable value="#[attributes.headers.portfolioId]" doc:name="portfolioId" doc:id="134e4a02-342d-4e1b-b78f-c1b2319b7d4e" variableName="portfolioId"/>
+		<logger level="INFO" doc:name="started " doc:id="53b766ff-a970-405a-afba-257a58f4fd29" message='#["request received for portfolioId : " ++ vars.portfolioId]'/>
+		<flow-ref doc:name="trade-transformation-subflow" doc:id="4723b866-eea6-425a-bdae-9aaaadcab56f" name="trade-transformation-subflow"/>
+		<flow-ref doc:name="ODS-insert-subflow" doc:id="a7b3d609-f894-4b35-9a9e-260f30c16d77" name="ODS-insert-subflow"/>
+		<ee:transform doc:name="set response" doc:id="779349c3-2e18-4799-b39a-34cf90bd5498">
+			<ee:message>
+				<ee:set-payload resource="dataweave/successResponse.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="end" doc:id="927f97f8-1ea7-40b8-927b-3e945a1fbd11" message='#["request processed successfully for portolioId : "++ vars.portfolioId]'/>
+	</sub-flow>
+	<sub-flow name="ODS-insert-subflow" doc:id="deef00e8-0108-4592-9632-9019cf05b352" >
+		<db:insert doc:name="Insert" doc:id="3b0909e8-fd83-4193-b599-98a342b773fb" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into mulesoft.trades (exchange,symbol,operation,price,quantity,status,created_date) 
+values (:exchange,:symbol,:operation,:price,:quantity,:status,:createdDate);]]></db:sql>
+			<db:input-parameters><![CDATA[#[payload]]]></db:input-parameters>
+		</db:insert>
+		<logger level="INFO" doc:name="inserted into db successfully" doc:id="fdd4e077-5c58-41d7-91ee-785a8d6c810c" message="trade inserted into database successfully" />
+	</sub-flow>
+	<sub-flow name="trade-transformation-subflow" doc:id="9a5cffef-4530-4d1a-860d-d1e019145c62" >
+		<ee:transform doc:name="convert trade to ODS" doc:id="71a0b9bb-18fb-402b-b403-47912e6676b3">
+			<ee:message>
+				<ee:set-payload resource="dataweave/transformTradeIntoODS.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="transformed successfully" doc:id="62f9b6b8-3184-4a03-bbda-f93c14719826" message="trade trasformed" />
+	</sub-flow>
+</mule>

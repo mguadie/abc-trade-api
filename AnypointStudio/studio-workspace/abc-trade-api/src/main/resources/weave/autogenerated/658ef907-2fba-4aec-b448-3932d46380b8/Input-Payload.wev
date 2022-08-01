@@ -1,0 +1,12 @@
+%dw 2.0
+
+type auto_658ef907_2fba_4aec_b448_3932d46380b8_Input_Payload = {
+  code: String, 
+  quantity: Number, 
+  price: Number, 
+  exchange: String, 
+  operation: "buy" | "sell", 
+  status?: "initiated" | "rejected" | "executed", 
+  _?: Any
+}
+
